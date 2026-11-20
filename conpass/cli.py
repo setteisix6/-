@@ -163,7 +163,16 @@ def main(argv=None) -> int:
     us = sub.add_parser("unschedule"); us.add_argument("job"); us.set_defaults(f=cmd_unschedule)
     stt = sub.add_parser("state"); stt.add_argument("--clear", metavar="DEDUPE_KEY"); stt.set_defaults(f=cmd_state)
     a = p.parse_args(argv)
-    return a.f(a)
+    from .device import DeviceError
+    try:
+        return a.f(a)
+    except DeviceError as e:
+        msg = str(e)
+        print(f"ERROR: {msg.splitlines()[0][:600]}", file=sys.stderr)
+        if "code 65" in msg:
+            print("  -> WDA build failed. Run `bash scripts/build_wda.sh` to see the real xcodebuild error.",
+                  file=sys.stderr)
+        return 3
 
 
 if __name__ == "__main__":
