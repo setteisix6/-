@@ -22,11 +22,22 @@ rm -f /tmp/conpass_certs.pem
 h "2. Signing identities (invalid ones show the reason, e.g. CSSMERR_TP_NOT_TRUSTED)"
 security find-identity -p codesigning 2>&1 | sed 's/^/  /'
 
-h "3. Apple intermediate certificates (WWDR G3 is needed for Apple Development certs)"
-for cn in "Apple Worldwide Developer Relations Certification Authority" "Apple Root CA"; do
-  n=$(security find-certificate -a -c "$cn" 2>/dev/null | grep -c '"labl"')
-  echo "  $cn: $n found"
-done
+h "3. Apple WWDR intermediate certificates (need an unexpired G3 for Apple Development certs)"
+security find-certificate -a -c "Apple Worldwide Developer Relations" -p 2>/dev/null > /tmp/conpass_wwdr.pem
+if [ -s /tmp/conpass_wwdr.pem ]; then
+  awk '/BEGIN CERT/{n++} {print > ("/tmp/conpass_wwdr_" n ".pem")}' /tmp/conpass_wwdr.pem
+  for f in /tmp/conpass_wwdr_*.pem; do
+    ou=$(openssl x509 -in "$f" -noout -subject -nameopt multiline 2>/dev/null | awk -F'= ' '/organizationalUnitName/{print $2}')
+    end=$(openssl x509 -in "$f" -noout -enddate 2>/dev/null | cut -d= -f2)
+    if openssl x509 -in "$f" -noout -checkend 0 >/dev/null 2>&1; then st=valid; else st=EXPIRED; fi
+    echo "  WWDR OU=${ou:-?(G1)} expires=$end [$st]"
+  done
+  rm -f /tmp/conpass_wwdr_*.pem
+else
+  echo "  none found"
+fi
+rm -f /tmp/conpass_wwdr.pem
+echo "  (Apple Root CA lives in the System Roots keychain and is not listed here; that is normal)"
 
 h "4. Teams Xcode knows about (accounts signed in to Xcode)"
 for k in IDEProvisioningTeamByIdentifier IDEProvisioningTeams; do
