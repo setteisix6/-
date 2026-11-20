@@ -1,0 +1,102 @@
+# 777CON-PASS screen & step definitions.
+#
+# !!! EVERYTHING BELOW IS A PLACEHOLDER !!!
+# The real UI has NOT been inspected yet. Fill each `value` from real-device
+# recon (`python -m conpass.cli recon` / Appium Inspector) and set
+# `verified: true` only after `python -m conpass.cli probe` shows it present
+# on the right screen. Production runs refuse to start while anything the flow
+# needs is unverified or still contains "TODO".
+#
+# Locator `by`: accessibility_id | predicate | class_chain | xpath | name | image | coords
+#   predicate example : "type == 'XCUIElementTypeButton' AND label == '抽選に申し込む'"
+#   coords example    : "0.5,0.92"   (relative x,y — last resort)
+#   image example     : "config/images/submit.png"
+# Template variables  : {store} {store_q} (predicate-escaped) {visit_date:%Y-%m-%d}
+#                       {month} {day} {year} {weekday_ja}
+
+meta:
+  app_version_verified: null     # e.g. "3.4.1" — record the app version you verified against
+  verified_on: null              # date of recon
+  notes: ""
+
+home_screen: home
+
+screens:
+  home:
+    description: "アプリ起動後のホーム（ログイン済み）"
+    markers: [{by: accessibility_id, value: "TODO", verified: false}]
+  login:
+    description: "ログイン画面（検出したら停止して手動ログインを依頼）"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  captcha:
+    description: "CAPTCHA/追加認証（自動回避しない）"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  network_error:
+    description: "通信エラー表示"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  maintenance:
+    description: "メンテナンス表示"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  force_update:
+    description: "強制アップデート要求"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  store_search:
+    description: "店舗検索画面"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  store_detail:
+    description: "店舗詳細/抽選一覧"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  confirm:
+    description: "申込内容の確認画面（申込ボタンがある画面）"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  complete:
+    description: "申込完了画面"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  already_applied:
+    description: "申込済み表示"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  closed:
+    description: "受付終了/満員表示"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+  reservation_list:
+    description: "申込履歴/予約一覧"
+    markers: [{by: predicate, value: "TODO", verified: false}]
+
+# Ordered steps from home to the submit tap. Exactly one step has submit: true.
+# Order follows the requested flow and MUST be corrected after recon.
+steps:
+  - name: open_store_search
+    action: tap
+    target: {by: accessibility_id, value: "TODO", verified: false}
+    expect: store_search
+  - name: input_store
+    action: clear_and_type
+    target: {by: predicate, value: "type == 'XCUIElementTypeSearchField' AND TODO", verified: false}
+    text: "{store}"
+  - name: select_store
+    action: scroll_to_tap
+    target: {by: predicate, value: "label == '{store_q}' AND TODO", verified: false}
+    expect: store_detail
+  - name: select_visit_date
+    action: scroll_to_tap
+    target: {by: predicate, value: "label CONTAINS '{month}/{day}' AND TODO", verified: false}
+  - name: open_confirm
+    action: tap
+    target: {by: predicate, value: "TODO", verified: false}
+    expect: confirm
+  - name: submit
+    action: tap
+    submit: true
+    target: {by: predicate, value: "TODO", verified: false}
+    expect_any: [complete, already_applied, closed]
+    timeout_s: 30
+
+# How to check the reservation list when the submit result is unclear.
+verify_list:
+  screen: reservation_list
+  steps:
+    - name: open_history
+      action: tap
+      target: {by: accessibility_id, value: "TODO", verified: false}
+      expect: reservation_list
+  match: {by: predicate, value: "label CONTAINS '{store_q}' AND TODO", verified: false}

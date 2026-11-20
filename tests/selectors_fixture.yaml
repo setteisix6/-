@@ -1,0 +1,26 @@
+home_screen: home
+screens:
+  home: {markers: [{by: accessibility_id, value: home_tab, verified: true}]}
+  login: {markers: [{by: accessibility_id, value: login_btn, verified: true}]}
+  captcha: {markers: [{by: accessibility_id, value: captcha_box, verified: true}]}
+  network_error: {markers: [{by: accessibility_id, value: net_err, verified: true}]}
+  maintenance: {markers: [{by: accessibility_id, value: maint, verified: true}]}
+  force_update: {markers: [{by: accessibility_id, value: upd, verified: true}]}
+  store_search: {markers: [{by: accessibility_id, value: search_field, verified: true}]}
+  store_detail: {markers: [{by: accessibility_id, value: store_title, verified: true}]}
+  confirm: {markers: [{by: accessibility_id, value: submit_btn, verified: true}]}
+  complete: {markers: [{by: accessibility_id, value: done_msg, verified: true}]}
+  already_applied: {markers: [{by: accessibility_id, value: already_msg, verified: true}]}
+  closed: {markers: [{by: accessibility_id, value: closed_msg, verified: true}]}
+  reservation_list: {markers: [{by: accessibility_id, value: history_title, verified: true}]}
+steps:
+  - {name: open_search, action: tap, target: {by: accessibility_id, value: search_tab, verified: true}, expect: store_search}
+  - {name: input_store, action: clear_and_type, target: {by: accessibility_id, value: search_field, verified: true}, text: "{store}"}
+  - {name: select_store, action: tap, target: {by: accessibility_id, value: "store:{store}", verified: true}, expect: store_detail}
+  - {name: select_date, action: tap, target: {by: accessibility_id, value: "date:{month}/{day}", verified: true}, expect: confirm}
+  - {name: submit, action: tap, submit: true, target: {by: accessibility_id, value: submit_btn, verified: true}, expect_any: [complete, already_applied, closed], timeout_s: 2}
+verify_list:
+  screen: reservation_list
+  steps:
+    - {name: open_history, action: tap, target: {by: accessibility_id, value: history_tab, verified: true}, expect: reservation_list}
+  match: {by: accessibility_id, value: "hist:{store}", verified: true}

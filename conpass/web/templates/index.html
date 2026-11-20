@@ -1,0 +1,54 @@
+{% extends "base.html" %}{% block body %}
+<h1>777CON-PASS 自動申込 管理</h1>
+<p class="mut">Mac時刻 {{ now }}</p>
+{% if msg %}<div class="card">{{ msg }}</div>{% endif %}
+{% if err %}<div class="card bad">{{ err }}</div>{% endif %}
+{% if unverified %}<div class="card warn"><b>セレクタ未検証 {{ unverified|length }} 件</b> — 本番実行はブロックされます（テスト実行は可）。
+  <details><summary>一覧</summary><ul>{% for u in unverified %}<li><code>{{ u }}</code></li>{% endfor %}</ul></details></div>{% endif %}
+
+<div class="card"><h2>実行予約</h2>
+<table><tr><th>ID</th><th>店舗 / 来店日</th><th>実行日時</th><th>モード</th><th>状態</th><th>操作</th></tr>
+{% for j in jobs %}{% set r = j.r %}
+<tr><td>{{ r.id }}</td><td>{{ r.store }}<br>{{ r.visit_date }}</td>
+<td>{{ r.execute_at }}<br><span class="mut">{{ r.timezone }}</span>{% if not j.future %}<br><span class="mut">(過去)</span>{% endif %}</td>
+<td class="{{ 'bad' if r.mode=='production' else 'mut' }}">{{ '本番' if r.mode=='production' else 'テスト' }}</td>
+<td>{% if j.running %}<span class="warn">実行中</span><br>{% endif %}
+ {% if j.scheduled %}<span class="ok">launchd登録済</span>{% else %}<span class="mut">未登録</span>{% endif %}
+ {% if j.state %}<br>申込状態: <b>{{ j.state.state }}</b>{% endif %}
+ {% if j.last %}<br><a href="/runs/{{ j.last.id }}">前回: {{ j.last.result }}</a>{% endif %}
+ {% if j.scheduled and j.wake %}<details><summary class="mut">スリープ復帰</summary><code>{{ j.wake }}</code></details>{% endif %}</td>
+<td>
+ <form class="inline" method="post" action="/jobs/{{ r.id }}/run"><input type="hidden" name="mode" value="test"><button>テスト実行</button></form>
+ {% if r.mode=='production' %}<form class="inline" method="post" action="/jobs/{{ r.id }}/run"><input type="hidden" name="mode" value="production">
+  <label><input type="checkbox" name="confirm_production" value="yes">今すぐ本番申込する</label><button class="d">本番実行</button></form>{% endif %}
+ {% if j.future %}{% if j.scheduled %}<form class="inline" method="post" action="/jobs/{{ r.id }}/unschedule"><button>自動実行解除</button></form>
+ {% else %}<form class="inline" method="post" action="/jobs/{{ r.id }}/schedule"><button class="p">自動実行登録</button></form>{% endif %}{% endif %}
+ <a href="/?edit={{ r.id }}">編集</a>
+ <form class="inline" method="post" action="/jobs/{{ r.id }}/delete" onsubmit="return confirm('削除しますか？')"><button class="d">キャンセル/削除</button></form>
+</td></tr>{% else %}<tr><td colspan="6" class="mut">まだありません</td></tr>{% endfor %}
+</table></div>
+
+{% set e = editing %}
+<div class="card"><h2>{{ '編集: ' ~ e.id if e else '新規予約' }}</h2>
+<form method="post" action="/jobs"><div class="grid">
+<div><label>ID（英小文字・数字・-）</label><input name="id" required pattern="[a-z0-9][a-z0-9_-]*" value="{{ e.id if e else '' }}" {{ 'readonly' if e }}></div>
+<div><label>店舗名（アプリ表示と完全一致）</label><input name="store" required value="{{ e.store if e else '' }}"></div>
+<div><label>来店日</label><input type="date" name="visit_date" required value="{{ e.visit_date if e else '' }}"></div>
+<div><label>申込実行日時</label><input type="datetime-local" step="1" name="execute_at" required value="{{ e.execute_at.strftime('%Y-%m-%dT%H:%M:%S') if e else '' }}"></div>
+<div><label>タイムゾーン</label><input name="timezone" value="{{ e.timezone if e else 'Asia/Tokyo' }}"></div>
+<div><label>受付開始（アプリ表示・任意）</label><input type="datetime-local" step="1" name="accept_from" value="{{ e.accept_from.strftime('%Y-%m-%dT%H:%M:%S') if e and e.accept_from else '' }}"></div>
+<div><label>受付終了（任意）</label><input type="datetime-local" step="1" name="accept_until" value="{{ e.accept_until.strftime('%Y-%m-%dT%H:%M:%S') if e and e.accept_until else '' }}"></div>
+<div><label>事前起動（秒）</label><input type="number" name="lead_seconds" min="30" max="1800" value="{{ e.lead_seconds if e else 180 }}"></div>
+<div><label>モード</label><select name="mode"><option value="test">テスト（申込ボタンを押さない）</option>
+  <option value="production" {{ 'selected' if e and e.mode=='production' }}>本番</option></select>
+  <label><input type="checkbox" name="confirm_production" value="yes">本番で申込することを確認しました</label></div>
+<div><label>完了通知</label><label><input type="checkbox" name="notify" value="1" {{ 'checked' if not e or e.notify }}>macOS通知</label></div>
+</div><p><button class="p">保存</button></p></form></div>
+
+<div class="card"><h2>実行履歴</h2><table><tr><th>#</th><th>ID</th><th>モード</th><th>開始</th><th>結果</th><th>起動誤差</th><th>申込タップ誤差</th><th>時計オフセット</th></tr>
+{% for x in runs %}<tr><td><a href="/runs/{{ x.id }}">{{ x.id }}</a></td><td>{{ x.job_id }}</td><td>{{ x.mode }}</td><td>{{ x.started_at[:19] }}</td>
+<td class="{{ 'ok' if x.result in ('success','success_verified','already_applied','test_ok') else 'bad' }}">{{ x.result }}</td>
+<td>{{ '%.0f ms'|format(x.launch_drift_ms) if x.launch_drift_ms is not none else '-' }}</td>
+<td>{{ '%.1f ms'|format(x.submit_drift_ms) if x.submit_drift_ms is not none else '-' }}</td>
+<td>{{ '%+.0f ms'|format(x.clock_offset_ms) if x.clock_offset_ms is not none else '-' }}</td></tr>{% endfor %}</table></div>
+{% endblock %}

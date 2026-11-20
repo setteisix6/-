@@ -1,0 +1,14 @@
+reservations:
+  - id: sample
+    store: "店舗名"
+    visit_date: "2026-11-25"
+    execute_at: "2026-11-24 23:59:59"
+    timezone: "Asia/Tokyo"
+    mode: test            # test | production
+    notify: true
+    # Reception window shown in the app (optional but recommended):
+    # accept_from: "2026-11-24 12:00:00"
+    # accept_until: "2026-11-25 08:00:00"
+    lead_seconds: 180     # launchd starts this many seconds early to navigate
+    late_grace_seconds: 120
+    max_submit_attempts: 1

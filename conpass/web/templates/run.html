@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block body %}
+<p><a href="/">← 戻る</a></p><h1>実行 #{{ run.id }} — {{ run.job_id }}</h1>
+<div class="card"><b>{{ run.result }}</b> {{ run.detail }}<br><span class="mut">{{ run.started_at }} → {{ run.finished_at }} / mode {{ run.mode }} / target {{ run.target_at }}</span></div>
+<div class="card shots"><h2>スクリーンショット</h2>{% for s in shots %}<a href="/files/{{ s }}" target="_blank"><img src="/files/{{ s }}" alt="{{ s }}" loading="lazy"></a>{% else %}<span class="mut">なし</span>{% endfor %}</div>
+<div class="card"><h2>ログ</h2><pre>{{ log }}</pre></div>
+{% endblock %}

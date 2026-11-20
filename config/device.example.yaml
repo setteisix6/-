@@ -1,0 +1,10 @@
+# Copy to config/device.yaml and fill in. Contains no passwords.
+appium_url: "http://127.0.0.1:4723"
+udid: ""                 # xcrun devicectl list devices  /  idevice_id -l
+bundle_id: ""            # ideviceinstaller -l | grep -i con  (confirm on the device)
+xcode_org_id: ""         # Apple Developer Team ID (10 chars)
+xcode_signing_id: "Apple Development"
+updated_wda_bundle_id: ""  # unique, e.g. com.<yourname>.WebDriverAgentRunner (free accounts)
+new_command_timeout: 300
+wda_launch_timeout_ms: 120000
+step_timeout_s: 20
