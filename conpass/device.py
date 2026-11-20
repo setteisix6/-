@@ -35,32 +35,49 @@ class Device(Protocol):
     def quit(self) -> None: ...
 
 
+def build_options(cfg):
+    """XCUITest capabilities for a real device. Separate for unit testing."""
+    from appium.options.ios import XCUITestOptions
+
+    if not cfg.udid or not cfg.bundle_id:
+        raise DeviceError("config/device.yaml: udid and bundle_id are required")
+    opts = XCUITestOptions()
+    opts.platform_name = "iOS"
+    opts.automation_name = "XCUITest"
+    opts.udid = cfg.udid
+    opts.bundle_id = cfg.bundle_id
+    opts.no_reset = True            # keep the user's login session
+    opts.full_reset = False
+    opts.new_command_timeout = cfg.new_command_timeout
+    opts.set_capability("appium:wdaLaunchTimeout", cfg.wda_launch_timeout_ms)
+    opts.set_capability("appium:showXcodeLog", cfg.show_xcode_log)
+    opts.set_capability("appium:autoAcceptAlerts", False)  # never auto-confirm dialogs
+    if cfg.xcode_org_id:
+        # The driver passes these as DEVELOPMENT_TEAM / CODE_SIGN_IDENTITY to xcodebuild
+        opts.set_capability("appium:xcodeOrgId", cfg.xcode_org_id)
+        opts.set_capability("appium:xcodeSigningId", cfg.xcode_signing_id)
+    if cfg.updated_wda_bundle_id:
+        # -> PRODUCT_BUNDLE_IDENTIFIER; the runner gets ".xctrunner" appended
+        opts.set_capability("appium:updatedWDABundleId", cfg.updated_wda_bundle_id)
+    if cfg.allow_provisioning_device_registration:
+        # Driver adds `-allowProvisioningUpdates -allowProvisioningDeviceRegistration`,
+        # letting Xcode create the (free) provisioning profile automatically.
+        opts.set_capability("appium:allowProvisioningDeviceRegistration", True)
+    if cfg.xcode_config_file:
+        opts.set_capability("appium:xcodeConfigFile", cfg.xcode_config_file)
+    if cfg.derived_data_path:
+        opts.set_capability("appium:derivedDataPath", cfg.derived_data_path)
+    return opts
+
+
 class AppiumDevice:
     """Thin wrapper over Appium-Python-Client with XCUITest options."""
 
     def __init__(self, cfg):
         from appium import webdriver
-        from appium.options.ios import XCUITestOptions
 
-        if not cfg.udid or not cfg.bundle_id:
-            raise DeviceError("config/device.yaml: udid and bundle_id are required")
         self.cfg = cfg
-        opts = XCUITestOptions()
-        opts.platform_name = "iOS"
-        opts.automation_name = "XCUITest"
-        opts.udid = cfg.udid
-        opts.bundle_id = cfg.bundle_id
-        opts.no_reset = True            # keep the user's login session
-        opts.full_reset = False
-        opts.new_command_timeout = cfg.new_command_timeout
-        opts.set_capability("appium:wdaLaunchTimeout", cfg.wda_launch_timeout_ms)
-        opts.set_capability("appium:showXcodeLog", False)
-        opts.set_capability("appium:autoAcceptAlerts", False)  # never auto-confirm dialogs
-        if cfg.xcode_org_id:
-            opts.set_capability("appium:xcodeOrgId", cfg.xcode_org_id)
-            opts.set_capability("appium:xcodeSigningId", cfg.xcode_signing_id)
-        if cfg.updated_wda_bundle_id:
-            opts.set_capability("appium:updatedWDABundleId", cfg.updated_wda_bundle_id)
+        opts = build_options(cfg)
         try:
             self.driver = webdriver.Remote(cfg.appium_url, options=opts)
         except Exception as e:  # noqa: BLE001

@@ -270,3 +270,20 @@ cp config/reservations.example.yaml config/reservations.yaml   # 編集
   - `launchctl print gui/$UID/local.conpass.job.<id>` で状態を確認してください。
   - `data/logs/launchd-<id>.err.log` を確認してください。
   - ターミナルや Python に「フルディスクアクセス」の許可が必要な場合があります。
+
+### WDA 署名エラー（`xcodebuild failed with code 65`）の切り分け
+
+確認環境：Apple Silicon (M1) / macOS 27.2.1 / Xcode 27.2 / iOS 26.6.2 / appium-xcuitest-driver 13.4.0 / appium-webdriveragent 17.0.12。
+
+```bash
+bash scripts/check_signing.sh
+```
+
+| 症状 | 原因 | 対処 |
+|---|---|---|
+| `No profiles for ...xctrunner ... pass -allowProvisioningUpdates` | driver は `appium:allowProvisioningDeviceRegistration` が true のときだけ `-allowProvisioningUpdates` を付ける | `device.yaml` の `allow_provisioning_device_registration: true`（現在の初期値） |
+| `No Account for Team "XXXXXXXXXX"` | Team ID の取り違え。証明書名の `(XXXXXXXXXX)` は**個人の識別子で、Team ID ではありません**。Team ID は証明書の OU 欄にあります。または Xcode のアカウント認証が期限切れになっています | `check_signing.sh` の 1 と 4 で Team ID を確認して `xcode_org_id` を直す。Xcode > Settings > Accounts でサインインし直す |
+| `find-identity` が `0 valid identities` | 中間証明書（Apple WWDR G3）がない、または信頼設定に問題がある | `check_signing.sh` の 2 に出る理由を確認。WWDR G3 を https://www.apple.com/certificateauthority/ から入れる |
+| Xcode GUI で WDA プロジェクトが locked | `~/.appium/node_modules` 配下は GUI での編集に向かない | 編集は不要です。driver が `DEVELOPMENT_TEAM` / `PRODUCT_BUNDLE_IDENTIFIER` を xcodebuild の引数で渡します。iOS 版 Runner は元から Automatic signing です |
+
+`project.pbxproj` の直接編集は推奨しません。driver を更新すると上書きされるためです。

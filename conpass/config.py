@@ -160,6 +160,11 @@ class DeviceConfig(BaseModel):
     xcode_org_id: str = ""         # Apple Team ID (10 chars) for WDA signing
     xcode_signing_id: str = "Apple Development"
     updated_wda_bundle_id: str = ""  # e.g. com.yourname.WebDriverAgentRunner
+    # Let xcodebuild create/refresh provisioning profiles (-allowProvisioningUpdates).
+    allow_provisioning_device_registration: bool = True
+    xcode_config_file: str = ""      # optional .xcconfig (alternative to org/signing id)
+    derived_data_path: str = ""      # optional fixed DerivedData dir for WDA builds
+    show_xcode_log: bool = False     # true while debugging WDA build failures
     new_command_timeout: int = 300
     wda_launch_timeout_ms: int = 120000
     implicit_wait_s: float = 0
